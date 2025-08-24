@@ -27,7 +27,7 @@ Cheesse provides a fully interactive chess experience with a graphical web inter
 
 ---
 
-## Getting Started  
+## Getting Started   
 
 ### Prerequisites  
 Make sure you have the following installed on your system:  
@@ -88,4 +88,3 @@ npm test
 - Potential online multiplayer (stretch goal)  
 
 ---
- 
