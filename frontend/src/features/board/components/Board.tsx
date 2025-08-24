@@ -7,8 +7,7 @@ import Referee from "../../referee/referee";
 
 // ---------------- Constants ---------------- //
 const FILES = ["a","b","c","d","e","f","g","h"];
-const RANKS = [8,7,6,5,4,3,2,1];
-
+const RANKS = [8, 7, 6, 5, 4, 3, 2, 1];
 
 type SquareId = `${typeof FILES[number]}${typeof RANKS[number]}`;
 type PieceName =
@@ -58,14 +57,13 @@ const initialPieces: Record<SquareId, PieceName> = {
 
 // ---------------- Square Component ---------------- //
 interface SquareProps {
-  id: SquareId;
-  isDark: boolean;
-  piece?: PieceName;
-  movePiece: (from: SquareId, to: SquareId) => void;
-  showLabels?: { rank?: number; file?: string };
+  readonly id: SquareId;
+  readonly isDark: boolean;
+  readonly piece?: PieceName;
+  readonly movePiece: (from: SquareId, to: SquareId) => void;
 }
 
-function Square({ id, isDark, piece, movePiece }: SquareProps) {
+function Square({ id, isDark, piece, movePiece }: Readonly<SquareProps>) {
   const [{ isOver }, drop] = useDrop<{ from: SquareId }, void, { isOver: boolean }>(() => ({
     accept: ItemTypes.PIECE,
     drop: (item) => movePiece(item.from, id),
@@ -94,8 +92,14 @@ export function squareToCoords(square: string): [number, number] {
 }
 
 // ---------------- Board Component ---------------- //
+import { useRecordMove } from '../hooks/useRecordMove';
+
 export default function Board() {
+  const recordMove = useRecordMove();
   const [pieces, setPieces] = useState(initialPieces);
+  const moveInProgress = useRef(false);
+
+  let moveCount = 0;
 
   // Make a persistent Referee instance
   const referee = useRef(new Referee()).current;
@@ -132,6 +136,7 @@ export default function Board() {
       const [newX, newY] = squareToCoords(to);
 
       // Check if the move is valid
+      referee.setMoveCount(moveCount);
       if (!referee.isValidMove(boardArray.current, prevX, prevY, newX, newY, piece, destPiece)) {
         console.warn(`Invalid move from ${prevX}, ${prevY} to ${newX}, ${newY}`);
         return prev; // invalid move, do not update state
@@ -147,6 +152,18 @@ export default function Board() {
       const next = { ...prev };
       next[to] = piece;
       delete next[from];
+
+      // Only record the move if it hasn't been recorded yet
+      if (!moveInProgress.current) {
+        moveInProgress.current = true;
+        recordMove(from, to, piece);
+        // Reset the flag after a short delay
+        setTimeout(() => {
+          moveInProgress.current = false;
+        }, 0);
+        }
+
+        moveCount += 1;   
       return next;
     });
   }
